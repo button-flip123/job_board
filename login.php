@@ -1,3 +1,50 @@
+<?php
+    ini_set('display_errors', 1);
+    ini_set('display_startup_errors', 1);
+    error_reporting(E_ALL);
+
+    session_start();
+    require_once("includes/db.php");
+    require_once("includes/mail.php");
+
+
+    if($_SESSION['logged_in'] == true){
+        header("Location: index.php");
+        exit();
+    }
+
+    if(isset($_POST['login']))
+    {
+        $email = $_POST['email'];
+        $password = $_POST['password'];
+
+        if(!empty($email) && !empty($password))
+        {
+            if(filter_var($email, FILTER_VALIDATE_EMAIL))
+            {
+                $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+                $sql = $conn->prepare("SELECT * FROM `users` WHERE `email` = :email AND `password` = :password");
+                $sql->bindParam(":password",$hashed_password);
+                $sql->bindParam(":email",$email);
+                $sql->execute();
+                $user = $sql->fetch(PDO::FETCH_ASSOC);
+                $_SESSION['logged_in'] = true;
+                $_SESSION['user'] = $user;
+                header("Location: index.php");
+                exit();
+            }
+            else
+            {
+                echo 'invalid email';
+            }
+        }
+        else{
+            echo 'email or password not inputed';
+        }
+    }
+
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -22,19 +69,19 @@
                         <form id="loginForm">
                             <div class="mb-3">
                                 <label for="email" class="form-label">Email</label>
-                                <input type="email" class="form-control" id="email" required>
+                                <input type="email" name="email" class="form-control" id="email" required>
                             </div>
                             <div class="mb-3">
                                 <label for="password" class="form-label">Password</label>
                                 <div class="input-group">
-                                    <input type="password" class="form-control" id="password" required>
+                                    <input type="password" name="password" class="form-control" id="password" required>
                                     <button class="btn btn-outline-secondary" type="button" id="togglePassword">Show</button>
                                 </div>
                             </div>
-                            <button type="submit" class="btn btn-primary w-100">Login</button>
+                            <button type="submit" name="login" class="btn btn-primary w-100">Login</button>
                         </form>
                         <div class="text-center mt-3">
-                            <a href="forgot.html">Forgot Password?</a> | <a href="register.html">Register</a>
+                            <a href="forgot_pass.php">Forgot Password?</a> | <a href="register.php">Register</a>
                         </div>
                     </div>
                 </div>
