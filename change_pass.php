@@ -1,35 +1,45 @@
 <?php
-    ini_set('display_errors', 1);
-    ini_set('display_startup_errors', 1);
-    error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
-    require_once("includes/db.php");
-    require_once("includes/mail.php");
+require_once("includes/db.php");
+session_start();
 
-    session_start();
-    if(!isset($_SESSION['logged_in'])){
-        header('Location: login.php');
-        exit();    
+$token = $_GET['token'];
+
+if(!isset($_SESSION['logged_in'])){
+    header("Location: login.php");
+    exit();
+}
+
+$error = '';
+
+if(isset($_POST['reset'])){
+    $newpass = $_POST['password'];
+    if(!empty($newpass)){
+        if(strlen($newpass)){$error = 'password is to short, minimum is 6 characters';}
+
+        $hashed = password_hash($newpass, PASSWORD_DEFAULT);
+        $sql = $conn->prepare('UPDATE `users` SET `password` = :pass WHERE `id` = :id AND `reset_password_expires` > NOW() AND `reset_password_token` = :token');
+        $sql->bindParam(':pass', $hashed);
+        $sql->bindParam(':token',$token);
+        $sql->bindParam(':id',$_SESSION['user']['id']);
+        $sql->execute();
+        
+        $sql = $conn->prepare('UPDATE `users` SET `reset_password_expires` = NULL,  `reset_password_token` = NULL WHERE `id` = :id');
+        $sql->bindParam(':id',$_SESSION['user']['id']);
+        $sql->execute();
+
+        header("Location: login.php");
+        exit();
+    
     }
+}
 
-    $mail = new Mail();
-
-    if(isset($_POST['reset'])){
-        $email = $_POST['email'];
-        if(!empty($email) && filter_var($email, FILTER_VALIDATE_EMAIL)){
-            $token = bin2hex(random_bytes(32));
-            $expires = date('Y-m-d H:i:s', strtotime('+1 hour'));
-
-            $sql = $conn->prepare("UPDATE `users` SET `reset_password_token` = :token, `reset_password_expires` = :expires");
-            $sql->bindParam(":token",$token);
-            $sql->bindParam(":expires",$expires);
-            $sql->execute();
-
-            $mail->SendMail($email,'jobify@gmail.com','Password reset','This is the email for your password reset, this link will be active for 1 hour http://localhost/job_board/change_pass.php?token='.$token.'');
-        }
-    }
 
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -51,11 +61,11 @@
             <div class="col-md-6">
                 <div class="card shadow">
                     <div class="card-body">
-                        <h2 class="card-title text-center mb-4">Forgot Password</h2>
+                        <h2 class="card-title text-center mb-4">Change password</h2>
                         <form id="forgotForm" method="post">
                             <div class="mb-3">
-                                <label for="email" class="form-label">Enter your Email</label>
-                                <input type="email" name="email" class="form-control" id="email" required>
+                                <label for="password" class="form-label">Enter your new password</label>
+                                <input type="password" name="password" class="form-control" id="password" required>
                             </div>
                             <button type="submit" name="reset" class="btn btn-primary w-100">Reset Password</button>
                         </form>

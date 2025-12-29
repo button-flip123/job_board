@@ -7,8 +7,8 @@
     require_once("includes/db.php");
     require_once("includes/mail.php");
 
-
-    if($_SESSION['logged_in'] == true){
+    $error = '';
+    if(isset($_SESSION['logged_in'])){
         header("Location: index.php");
         exit();
     }
@@ -21,25 +21,33 @@
         if(!empty($email) && !empty($password))
         {
             if(filter_var($email, FILTER_VALIDATE_EMAIL))
-            {
-                $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-                $sql = $conn->prepare("SELECT * FROM `users` WHERE `email` = :email AND `password` = :password");
-                $sql->bindParam(":password",$hashed_password);
-                $sql->bindParam(":email",$email);
+            {   
+                $sql = $conn->prepare("SELECT * FROM `users` WHERE `email` = :email LIMIT 1");
+                $sql->bindParam(":email",$email,PDO::PARAM_STR);
                 $sql->execute();
                 $user = $sql->fetch(PDO::FETCH_ASSOC);
-                $_SESSION['logged_in'] = true;
-                $_SESSION['user'] = $user;
-                header("Location: index.php");
-                exit();
+                if(!empty($user)){
+                    if(password_verify($password,$user['password']) && $user['email_verified'] == 1){
+                        $_SESSION['logged_in'] = true;
+                        $_SESSION['user'] = $user;
+                        header("Location: index.php");
+                        exit();
+                    }
+                    else{
+                        $error = 'password is incorrect';
+                    }
+                }
+                else{
+                    $error = 'this user does not exist';
+                }          
             }
             else
             {
-                echo 'invalid email';
+                $error = 'email is invalid';
             }
         }
         else{
-            echo 'email or password not inputed';
+            $error = 'email or password field is empty';
         }
     }
 
@@ -50,13 +58,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Job Board - Login</title>
+    <title>Jobify - Login</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <header class="bg-primary text-white text-center py-3">
-        <h1>Job Board</h1>
+        <h1>Jobify</h1>
         <p>Find or offer jobs and services</p>
     </header>
     
@@ -66,7 +74,13 @@
                 <div class="card shadow">
                     <div class="card-body">
                         <h2 class="card-title text-center mb-4">Login</h2>
-                        <form id="loginForm">
+                        <?php if (!empty($error)): ?>
+                            <div class="alert alert-danger alert-dismissible fade show">
+                                <?php echo htmlspecialchars($error); ?>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        <?php endif; ?>
+                        <form id="loginForm" method="post">
                             <div class="mb-3">
                                 <label for="email" class="form-label">Email</label>
                                 <input type="email" name="email" class="form-control" id="email" required>

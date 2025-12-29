@@ -54,7 +54,7 @@
 </head>
 <body>
     <header class="bg-primary text-white text-center py-3">
-        <h1>Job Board</h1>
+        <h1>Jobify</h1>
         <p>Find or offer jobs and services</p>
     </header>
     
