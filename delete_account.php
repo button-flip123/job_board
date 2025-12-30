@@ -1,3 +1,38 @@
+<?php
+    require_once("includes/db.php");
+    session_start();
+    if(!isset($_SESSION["logged_in"])){
+        header("Location: login.php");
+        exit();
+    }
+
+    if(isset($_POST['delete_account'])){
+        $password = $_POST['current_password'];
+        if(!empty($password)){
+            $sql = $conn->prepare('SELECT * FROM `users` WHERE `id` = :id');
+            $sql->bindParam(":id",$_SESSION['user']['id']);
+            $sql->execute();
+            $user = $sql->fetch(PDO::FETCH_ASSOC);
+
+            if(password_verify($password,$user['password'])){
+                $sql = $conn->prepare("DELETE FROM `users` WHERE `id` = :id");
+                $sql->bindParam(":id",$user['id']);
+                $sql->execute();
+
+                session_destroy();
+                header("Location: login.php?msg=account_deleted");
+                exit();
+            }
+            else{
+                $error = "Password is incorrect";
+            }
+        }
+        else{
+            $error = "Password field is empty";
+        }
+    }
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
