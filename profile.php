@@ -30,14 +30,17 @@
         $update->bindParam(":bio",$bio,PDO::PARAM_STR);
         $update->execute();
 
+        
+
         $_SESSION['user']['company'] = $company;
         $_SESSION['user']['location'] = $location;
         $_SESSION['user']['short_bio'] = $bio;
         
-
+        
     }
 
-
+    $profile_pic = "imgs/" . $_SESSION['user']['profile_pic'];
+    //echo $profile_pic;
 ?>
 
 
@@ -89,9 +92,9 @@
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-4 text-center mb-4 mb-md-0">
-                                <img src="https://via.placeholder.com/200" alt="Profile Picture" class="rounded-circle img-fluid mb-3" style="width: 200px; height: 200px; object-fit: cover;">
+                                <img src="<?php echo $profile_pic; ?>" alt="Profile Picture" class="rounded-circle img-fluid mb-3" style="width: 200px; height: 200px; object-fit: cover;">
                                 <br>
-                                <button class="btn btn-outline-primary btn-sm">Change Photo</button>
+                                <a class="btn btn-outline-primary btn-sm" href="change_pic.php">Change Photo</a>
                             </div>
                             <div class="col-md-8">
                                 <form method="post" action="">
