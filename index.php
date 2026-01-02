@@ -16,6 +16,30 @@
     $sql->execute();
     $ads = $sql->fetchAll(PDO::FETCH_ASSOC);
 
+    $search_query = trim($_GET['query'] ?? '');
+    $where_clause = '';
+    $params = [];
+
+    if (!empty($search_query)) {
+        $where_clause = "WHERE (a.title LIKE ? 
+                            OR a.description LIKE ? 
+                            OR a.location LIKE ? 
+                            OR a.category LIKE ?)";
+        $like_query = '%' . $search_query . '%';
+        $params = [$like_query, $like_query, $like_query, $like_query];
+    }
+
+    $sql = "
+        SELECT a.*, u.name AS author_name 
+        FROM ads a 
+        JOIN users u ON a.user_id = u.id 
+        $where_clause
+        ORDER BY a.created_at DESC
+    ";
+    $stmt = $conn->prepare($sql);
+    $stmt->execute($params);
+    $ads = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -62,8 +86,8 @@
         <div class="row mb-4">
             <div class="col-md-8 mx-auto">
                 <form class="d-flex">
-                    <input class="form-control me-2" type="search" name="q" placeholder="Search ads (e.g. developer, Belgrade...)" aria-label="Search" value="<?php echo htmlspecialchars($_GET['q'] ?? ''); ?>">
-                    <button class="btn btn-primary" type="submit">Search</button>
+                    <input class="form-control me-2" type="search" name="query" placeholder="Search ads (e.g. developer, Belgrade...)" aria-label="Search" value="<?php echo htmlspecialchars($_GET['q'] ?? ''); ?>">
+                    <button class="btn btn-primary" name="search" type="submit">Search</button>
                 </form>
             </div>
         </div>
